@@ -66,6 +66,10 @@ public:
     bool StratumModeConfirmed() { return m_stratumModeConfirmed; }
     bool IsUnrecoverable() { return m_unrecoverable; }
     void MarkUnrecoverable() { m_unrecoverable = true; }
+//@ethos    
+    void User(std::string user) { m_username = username; }
+    void Scheme(std::string scheme) { m_scheme = scheme; }
+//@ethos    
 
 private:
     std::string m_scheme;

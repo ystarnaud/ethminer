@@ -257,6 +257,27 @@ public:
                "-P,--pool,pool", pools, "Specify one or more pool URLs. See below for URL syntax")
             ->group(CommonGroup);
 
+//@ethos
+        string m_stratum[2];
+        string m_userpass[2];
+
+        app.add_option(
+               "-S,--stratum", m_stratum[0], "Specify the primary stratum pool URL.")
+            ->group(CommonGroup);
+
+        app.add_option(
+               "-O,--userpass", m_userpass[0], "Specify the primary pool username and password.")
+            ->group(CommonGroup);
+
+        app.add_option(
+               "-FS,--stratum-failover", m_stratum[1], "Specify the failover stratum pool URL.")
+            ->group(CommonGroup);
+
+        app.add_option(
+               "-FO,--failover-userpass", m_userpass[1], "Specify the failover pool username and password.")
+            ->group(CommonGroup);
+//@ethos
+
         app.add_option("--failover-timeout", m_failovertimeout,
                "Set the amount of time in minutes to stay on a failover pool before trying to "
                "reconnect to primary. If = 0 then no switch back.",
@@ -340,6 +361,9 @@ public:
 
 #endif
 
+    bool m_set_no_eval = false;
+    bool m_set_eval = false;
+
 #if ETH_ETHASHCL
 
         int clKernel = -1;
@@ -411,9 +435,17 @@ public:
             ->group(CUDAGroup)
             ->check(CLI::Range(1, 99));
 
-#endif
-        app.add_flag("--noeval", m_noEval, "Bypass host software re-evaluation of GPU solutions")
+//@ethos
+        app.add_flag("--cuda-noeval", m_set_no_eval, "Bypass host software re-evaluation of GPU solutions")
             ->group(CommonGroup);
+
+#endif
+        app.add_flag("--noeval", m_set_no_eval, "Bypass host software re-evaluation of GPU solutions")
+            ->group(CommonGroup);
+
+        app.add_flag("--doeval", m_set_eval, "Bypass host software re-evaluation of GPU solutions")
+            ->group(CommonGroup);
+//@ethos
 
         app.add_option("-L,--dag-load-mode", m_dagLoadMode,
                "Set the DAG load mode. 0=parallel, 1=sequential, 2=single."
@@ -558,6 +590,34 @@ public:
             m_mode = OperationMode::Benchmark;
         else if (sim_opt->count())
             m_mode = OperationMode::Simulation;
+
+//@ethos
+        //set no eval flag based on user options (on by default)
+        if (m_set_eval) {
+            m_noEval = false;
+        }
+
+        //add end point for primary stratum
+        if (m_stratum[0].length()) {
+            URI uri = SetupStratumPool(m_stratum[0], m_userpass[0]);
+            if (!uri.Valid()) {
+                exit(-1);
+            }
+
+            m_endpoints.push_back(uri);
+            m_mode = OperationMode::Stratum;
+
+            //add end point for failover stratum
+            if (m_stratum[1].length()) {
+                URI uri = SetupStratumPool(m_stratum[1], ((m_userpass[1].lenght()) ? m_userpass[1] : m_userpass[0]));
+                if (!uri.Valid()) {
+                    exit(-1);
+                }
+
+                m_endpoints.push_back(uri);
+            }
+        }
+//@ethos
 
         for (auto url : pools)
         {
@@ -740,6 +800,35 @@ public:
     }
 
 private:
+//@ethos
+    URI SetupStratumPool(string url, string userpass)
+    {
+        URI uri(url);
+
+        if (!uri.Valid()) {
+            cerr << endl << "Bad endpoint address: " << url << "\n\n";
+            return uri;
+        }
+
+        //set stratum scheme and mode 0
+        uri.Scheme("stratum+tcp");
+        uri.SetStratumMode(0);
+
+        //process primary userpass
+        if (userpass.length()) {
+            size_t p = userpass.find_first_of(":");
+            uri.User(userpass.substr(0, p));
+
+            if (p + 1 <= userpass.length()) {
+                uri.Pass(userpass.substr(p+1));
+            }
+        }
+
+        return uri;        
+    }
+//@ethos
+
+
     void doBenchmark(MinerType _m, unsigned _warmupDuration = 15, unsigned _trialDuration = 3,
         unsigned _trials = 5)
     {
@@ -991,7 +1080,9 @@ private:
     unsigned m_cudaBlockSize = CUDAMiner::c_defaultBlockSize;
     unsigned m_cudaParallelHash = 4;
 #endif
-    bool m_noEval = false;
+//@ethos    
+    bool m_noEval = true;
+//@ethos    
     unsigned m_dagLoadMode = 0;  // parallel
     unsigned m_dagCreateDevice = 0;
     bool m_exit = false;
