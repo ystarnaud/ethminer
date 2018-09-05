@@ -67,7 +67,8 @@ public:
     bool IsUnrecoverable() { return m_unrecoverable; }
     void MarkUnrecoverable() { m_unrecoverable = true; }
 //@ethos    
-    void User(std::string user) { m_username = username; }
+    void User(std::string username) { m_username = username; }
+    void Pass(std::string password) { m_password = password; }
     void Scheme(std::string scheme) { m_scheme = scheme; }
 //@ethos    
 
