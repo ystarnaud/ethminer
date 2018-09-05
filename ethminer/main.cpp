@@ -269,13 +269,13 @@ public:
                "-O,--userpass", m_userpass[0], "Specify the primary pool username and password.")
             ->group(CommonGroup);
 
-        app.add_option(
+/*        app.add_option(
                "-FS,--stratum-failover", m_stratum[1], "Specify the failover stratum pool URL.")
             ->group(CommonGroup);
 
         app.add_option(
                "-FO,--failover-userpass", m_userpass[1], "Specify the failover pool username and password.")
-            ->group(CommonGroup);
+            ->group(CommonGroup);*/
 //@ethos
 
         app.add_option("--failover-timeout", m_failovertimeout,
@@ -361,8 +361,10 @@ public:
 
 #endif
 
+//@ethos
     bool m_set_no_eval = false;
     bool m_set_eval = false;
+//@ethos
 
 #if ETH_ETHASHCL
 
@@ -436,7 +438,7 @@ public:
             ->check(CLI::Range(1, 99));
 
 //@ethos
-        app.add_flag("--cuda-noeval", m_set_no_eval, "Bypass host software re-evaluation of GPU solutions")
+        app.add_flag("--cuda-noeval", m_set_no_eval, "Bypass host software re-evaluation of CUDA GPU solutions")
             ->group(CommonGroup);
 
 #endif
@@ -608,14 +610,14 @@ public:
             m_mode = OperationMode::Stratum;
 
             //add end point for failover stratum
-            if (m_stratum[1].length()) {
+            /*if (m_stratum[1].length()) {
                 URI uri = SetupStratumPool(m_stratum[1], ((m_userpass[1].length()) ? m_userpass[1] : m_userpass[0]));
                 if (!uri.Valid()) {
                     exit(-1);
                 }
 
                 m_endpoints.push_back(uri);
-            }
+            }*/
         }
 //@ethos
 

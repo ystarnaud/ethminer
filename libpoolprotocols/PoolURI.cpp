@@ -91,93 +91,104 @@ static std::string urlDecode(std::string s)
 
 URI::URI(const std::string uri)
 {
+    bool simple_mode = false;
+    const char *curstr, *tmpstr;
+    size_t len;
+
+    //if only one colon is passed in the uri then it's a simple host:port combination
+    size_t n = std::count(uri.begin(), uri.end(), ':');
+    if (n == 1) {
+        simple_mode = true;
+    }
+
     m_uri = uri;
+    curstr = m_uri.c_str();
 
-    const char* curstr = m_uri.c_str();
-
-    // <scheme> := [a-z\0-9\+\-\.]+,  convert to lower case
-    // Read scheme (mandatory)
-    const char* tmpstr = strchr(curstr, ':');
-    if (nullptr == tmpstr)
-    {
-        // Not found
-        return;
-    }
-    // Get the scheme length
-    size_t len = tmpstr - curstr;
-    // Copy the scheme to the string, all lowecase, can't be url encoded
-    m_scheme.append(curstr, len);
-    std::transform(m_scheme.begin(), m_scheme.end(), m_scheme.begin(), ::tolower);
-    if (0 != std::count_if(m_scheme.begin(), m_scheme.end(), [](char c) {
-            return !(isalpha(c) || isdigit(c) || ('+' == c) || ('-' == c) || ('.' == c));
-        }))
-    {
-        return;
-    }
-
-    // Skip ':'
-    tmpstr++;
-    curstr = tmpstr;
-
-    // //<user>:<password>@<host>:<port>/<url-path>
-    // Any ":", "@" and "/" must be encoded.
-    // Eat "//"
-    if (('/' != *curstr) || ('/' != *(curstr + 1)))
-    {
+    if (!simple_mode) {
+        // <scheme> := [a-z\0-9\+\-\.]+,  convert to lower case
+        // Read scheme (mandatory)
+        tmpstr = strchr(curstr, ':');
+        if (nullptr == tmpstr)
+        {
+            // Not found
             return;
-    }
-    curstr += 2;
-
-    // Check if the user (and password) are specified.
-    bool userpass_flag = false;
-    tmpstr = curstr;
-    while ('\0' != *tmpstr)
-    {
-        if ('@' == *tmpstr)
-        {
-            // Username and password are specified
-            userpass_flag = true;
-            break;
         }
-        else if ('/' == *tmpstr)
-        {
-            // End of <host>:<port> specification
-            break;
-        }
-        tmpstr++;
-    }
-
-    // User and password specification
-    tmpstr = curstr;
-    if (userpass_flag)
-    {
-        // Read username
-        while (('\0' != *tmpstr) && (':' != *tmpstr) && ('@' != *tmpstr))
-            tmpstr++;
+        // Get the scheme length
         len = tmpstr - curstr;
-        m_username.append(curstr, len);
-        m_username = urlDecode(m_username);
-        // Look for password
-        curstr = tmpstr;
-        if (':' == *curstr)
+        // Copy the scheme to the string, all lowecase, can't be url encoded
+        m_scheme.append(curstr, len);
+        std::transform(m_scheme.begin(), m_scheme.end(), m_scheme.begin(), ::tolower);
+        if (0 != std::count_if(m_scheme.begin(), m_scheme.end(), [](char c) {
+                return !(isalpha(c) || isdigit(c) || ('+' == c) || ('-' == c) || ('.' == c));
+            }))
         {
-            // Skip ':'
-            curstr++;
-            // Read password
-            tmpstr = curstr;
-            while (('\0' != *tmpstr) && ('@' != *tmpstr))
+            return;
+        }
+
+        // Skip ':'
+        tmpstr++;
+        curstr = tmpstr;
+
+        // //<user>:<password>@<host>:<port>/<url-path>
+        // Any ":", "@" and "/" must be encoded.
+        // Eat "//"
+        if (('/' != *curstr) || ('/' != *(curstr + 1)))
+        {
+                return;
+        }
+        curstr += 2;
+
+        // Check if the user (and password) are specified.
+        bool userpass_flag = false;
+        tmpstr = curstr;
+        while ('\0' != *tmpstr)
+        {
+            if ('@' == *tmpstr)
+            {
+                // Username and password are specified
+                userpass_flag = true;
+                break;
+            }
+            else if ('/' == *tmpstr)
+            {
+                // End of <host>:<port> specification
+                break;
+            }
+            tmpstr++;
+        }
+
+        // User and password specification
+        tmpstr = curstr;
+        if (userpass_flag)
+        {
+            // Read username
+            while (('\0' != *tmpstr) && (':' != *tmpstr) && ('@' != *tmpstr))
                 tmpstr++;
             len = tmpstr - curstr;
-            m_password.append(curstr, len);
-            m_password = urlDecode(m_password);
+            m_username.append(curstr, len);
+            m_username = urlDecode(m_username);
+            // Look for password
             curstr = tmpstr;
+            if (':' == *curstr)
+            {
+                // Skip ':'
+                curstr++;
+                // Read password
+                tmpstr = curstr;
+                while (('\0' != *tmpstr) && ('@' != *tmpstr))
+                    tmpstr++;
+                len = tmpstr - curstr;
+                m_password.append(curstr, len);
+                m_password = urlDecode(m_password);
+                curstr = tmpstr;
+            }
+            // Skip '@'
+            if ('@' != *curstr)
+            {
+                return;
+            }
+            curstr++;
         }
-        // Skip '@'
-        if ('@' != *curstr)
-        {
-            return;
-        }
-        curstr++;
     }
 
     bool ipv6_flag = '[' == *curstr;
