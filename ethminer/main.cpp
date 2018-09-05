@@ -609,7 +609,7 @@ public:
 
             //add end point for failover stratum
             if (m_stratum[1].length()) {
-                URI uri = SetupStratumPool(m_stratum[1], ((m_userpass[1].lenght()) ? m_userpass[1] : m_userpass[0]));
+                URI uri = SetupStratumPool(m_stratum[1], ((m_userpass[1].length()) ? m_userpass[1] : m_userpass[0]));
                 if (!uri.Valid()) {
                     exit(-1);
                 }
